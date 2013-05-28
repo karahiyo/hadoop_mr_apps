@@ -1,0 +1,27 @@
+----- ----- ----- ----- ----- 
+chap06-5_commands.txt
+----- ----- ----- ----- ----- 
+
+●サンプルの実行方法
+(1)CDH3
+cd ~/mapreduce/HadoopStreamingSample
+hadoop jar /usr/lib/hadoop/contrib/streaming/hadoop-streaming.jar -input /user/mruser/input_wordcount -output /user/mruser/output_wordcount_streaming -mapper WordCountMapper.rb -reducer WordCountReducer.rb -file scripts/WordCountMapper.rb -file scripts/WordCountReducer.rb
+hadoop fs -cat /user/mruser/output_wordcount_streaming/part-00000
+
+※本文には記載されていませんが、CDH3の最新版であるcdh3u5で実行する場合、jarファイルの名前が変わっており、
+　実行できません。cdh3u5では以下のコマンドを実行してください
+  hadoop jar /usr/lib/hadoop/contrib/streaming/hadoop-streaming-0.20.2-cdh3u5.jar -input /user/mruser/input_wordcount -output /user/mruser/output_wordcount_streaming -mapper WordCountMapper.rb -reducer WordCountReducer.rb -file scripts/WordCountMapper.rb -file scripts/WordCountReducer.rb
+
+
+(2)CDH4
+cd ~/mapreduce/HadoopStreamingSample
+hadoop jar /usr/lib/hadoop-mapreduce/hadoop-streaming.jar -files scripts/WordCountMapper.rb,scripts/WordCountReducer.rb -input /user/mruser/input_wordcount -output /user/mruser/output_wordcount_streaming -mapper WordCountMapper.rb -reducer WordCountReducer.rb
+hadoop fs -cat /user/mruser/output_wordcount_streaming/part-00000
+
+----- ----- ----- ----- ----- 
+はじめての Hadoop
+~ 分散データ処理の基本から実践まで
+2012 年 12 月 25 日 初版 第 1 刷発行
+著 者 田澤 孝之 横井 浩 松井 一比良発行者 片岡 巌 
+発行所 株式会社技術評論社
+----- ----- ----- ----- ----- 

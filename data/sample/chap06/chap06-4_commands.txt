@@ -1,0 +1,86 @@
+----- ----- ----- ----- ----- 
+chap06-4_commands.txt
+----- ----- ----- ----- ----- 
+
+●MRUnitを使うための準備
+cd ~/mapreduce
+wget http://archive.apache.org/dist/mrunit/mrunit-0.9.0-incubating/mrunit-0.9.0-incubating.tar.gz
+tar xvzf mrunit-0.9.0-incubating.tar.gz
+
+
+●コンパイルと実行
+(1)コンパイル
+・クラスパス(CDH3)
+cd ~/mapreduce/MRSample
+CLASSPATH=/usr/lib/hadoop/hadoop-core.jar
+MRUNIT_LIB=~/mapreduce/mrunit-0.9.0-incubating/lib
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/commons-logging-1.1.1.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/hamcrest-core-1.1.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/junit-4.10.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/log4j-1.2.15.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/mockito-all-1.8.5.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/mrunit-0.9.0-incubating-hadoop1.jar
+CLASSPATH=$CLASSPATH:./WordCountJob.jar
+
+・クラスパス(CDH4)
+cd ~/mapreduce/MRSample
+CLASSPATH=/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar:/usr/lib/hadoop/hadoop-common.jar
+MRUNIT_LIB=~/mapreduce/mrunit-0.9.0-incubating/lib
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/commons-logging-1.1.1.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/hamcrest-core-1.1.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/junit-4.10.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/log4j-1.2.15.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/mockito-all-1.8.5.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/mrunit-0.9.0-incubating-hadoop2.jar
+CLASSPATH=$CLASSPATH:./WordCountJob.jar
+
+・コンパイル
+javac -classpath $CLASSPATH -d ./classes ./src/test/sample/mr/WordCount*.java
+
+
+(2)テストケースの実行
+・クラスパス(CDH3)
+cd ~/mapreduce/MRSample
+MRUNIT_LIB=~/mapreduce/mrunit-0.9.0-incubating/lib
+CLASSPATH=/usr/lib/hadoop/hadoop-core.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/commons-logging-1.1.1.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/hamcrest-core-1.1.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/junit-4.10.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/log4j-1.2.15.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/mockito-all-1.8.5.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/mrunit-0.9.0-incubating-hadoop1.jar
+CLASSPATH=$CLASSPATH:./WordCountJob.jar
+CLASSPATH=$CLASSPATH:./classes
+CLASSPATH=$CLASSPATH:/usr/lib/hadoop/lib/guava-r09-jarjar.jar
+
+・クラスパス(CDH4)
+cd ~/mapreduce/MRSample
+CLASSPATH=/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar:/usr/lib/hadoop/hadoop-common.jar
+MRUNIT_LIB=~/mapreduce/mrunit-0.9.0-incubating/lib
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/commons-logging-1.1.1.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/hamcrest-core-1.1.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/junit-4.10.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/log4j-1.2.15.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/mockito-all-1.8.5.jar
+CLASSPATH=$CLASSPATH:$MRUNIT_LIB/mrunit-0.9.0-incubating-hadoop2.jar
+CLASSPATH=$CLASSPATH:./WordCountJob.jar
+CLASSPATH=$CLASSPATH:./classes
+CLASSPATH=$CLASSPATH:/usr/lib/hadoop/lib/guava-11.0.2.jar
+CLASSPATH=$CLASSPATH:/usr/lib/hadoop/lib/avro-1.5.4.jar
+CLASSPATH=$CLASSPATH:/usr/lib/hadoop/lib/commons-lang-2.5.jar
+
+・テストケースの実行(新API)
+java -classpath $CLASSPATH org.junit.runner.JUnitCore test.sample.mr.WordCountNewMapperTest test.sample.mr.WordCountNewReducerTest test.sample.mr.WordCountNewMapReduceTest
+
+・テストケースの実行(旧API)
+※本文には記載されていませんが、WordCountのサンプルコードに旧API版WordCount用テストケースも含まれています。
+java -classpath $CLASSPATH org.junit.runner.JUnitCore test.sample.mr.WordCountOldMapperTest test.sample.mr.WordCountOldReducerTest test.sample.mr.WordCountOldMapReduceTest
+
+----- ----- ----- ----- ----- 
+はじめての Hadoop
+~ 分散データ処理の基本から実践まで
+2012 年 12 月 25 日 初版 第 1 刷発行
+著 者 田澤 孝之 横井 浩 松井 一比良発行者 片岡 巌 
+発行所 株式会社技術評論社
+----- ----- ----- ----- ----- 
+ 

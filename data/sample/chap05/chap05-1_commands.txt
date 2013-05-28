@@ -1,0 +1,161 @@
+----- ----- ----- ----- ----- 
+chap05-1_commands.txt
+----- ----- ----- ----- ----- 
+
+●データベースを作成する
+CREATE DATABASE SALES_SAMPLE COMMENT 'サンプルデータ格納DB';
+show databases;
+use SALES_SAMPLE;
+
+●テーブルを作成する
+use SALES_SAMPLE;
+CREATE TABLE SALES
+(
+  SALES_ID INT COMMENT '注文番号',
+  SHOP_CODE STRING COMMENT '店舗コード',
+  SALES_DATE STRING COMMENT '売上日'
+)
+ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '\t'
+  LINES TERMINATED BY '\n'
+;
+
+CREATE TABLE SALES_DETAIL
+(
+  SALES_ID INT COMMENT '注文番号',
+  DETAIL_ID INT COMMENT '明細番号',
+  ITEM_CODE STRING COMMENT '商品コード',
+  UNIT_PRICE INT COMMENT '単価',
+  QUANTITY INT COMMENT '個数'
+)
+ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '\t'
+  LINES TERMINATED BY '\n'
+;
+
+CREATE TABLE ITEM_MASTER
+(
+  ITEM_CODE STRING COMMENT '商品コード',
+  ITEM_NAME STRING COMMENT '商品名',
+  UNIT_PRICE INT COMMENT '単価'
+)
+ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '\t'
+  LINES TERMINATED BY '\n'
+;
+
+CREATE TABLE SHOP_MASTER
+(
+  SHOP_CODE STRING COMMENT '店舗コード',
+  REGION STRING COMMENT '地域'
+)
+ROW FORMAT DELIMITED
+  FIELDS TERMINATED BY '\t'
+  LINES TERMINATED BY '\n'
+;
+
+show tables; 
+
+●データをインポートする
+(1)データのインポート
+use SALES_SAMPLE;
+LOAD DATA LOCAL INPATH '/home/hiveuser/hive/sales_sample/sales.tsv' INTO TABLE SALES;
+LOAD DATA LOCAL INPATH '/home/hiveuser/hive/sales_sample/sales_detail.tsv' INTO TABLE SALES_DETAIL;
+LOAD DATA LOCAL INPATH '/home/hiveuser/hive/sales_sample/itemlist.tsv' INTO TABLE ITEM_MASTER;
+LOAD DATA LOCAL INPATH '/home/hiveuser/hive/sales_sample/shoplist.tsv' INTO TABLE SHOP_MASTER;
+(2)格納ファイルの確認
+hadoop fs -lsr /user/hive/warehouse
+
+
+●データを検索する
+(1)実行例1
+use SALES_SAMPLE;
+SELECT * FROM SALES WHERE SALES_DATE LIKE '2012-02%' LIMIT 10;
+
+(2)実行例2
+SELECT SHOP_CODE, COUNT(*) FROM SALES WHERE SALES_DATE LIKE '2012-02%' GROUP BY SHOP_CODE ORDER BY SHOP_CODE;
+
+●テーブルを結合する
+(1)結合用HiveQL
+use SALES_SAMPLE;
+SELECT S.SHOP_CODE, SUM(SD.UNIT_PRICE * SD.QUANTITY)
+FROM SALES S JOIN SALES_DETAIL SD ON (S.SALES_ID = SD.SALES_ID)
+WHERE S.SHOP_CODE = 'shop00088' AND S.SALES_DATE LIKE '2012-02%'
+GROUP BY S.SHOP_CODE;
+
+(2)チューニング
+set hive.auto.convert.join = true;
+set hive.mapjoin.smalltable.filesize = 30000000;
+
+
+●データをエクスポートする
+(1)STEP1：エクスポート用のテーブルを作成する
+use SALES_SAMPLE;
+CREATE EXTERNAL TABLE EXPORT_SALES
+(
+  SHOP_CODE STRING,
+  SALES_DATE STRING,
+  TOTAL_PRICE STRING
+)
+ROW FORMAT
+  DELIMITED FIELDS TERMINATED BY '\t'
+  LINES TERMINATED BY '\n'
+LOCATION '/user/hiveuser/export_sales';
+
+(2)STEP2：集計データを INSERT する
+INSERT OVERWRITE TABLE EXPORT_SALES
+SELECT S.SHOP_CODE,S.SALES_DATE,SUM(SD.UNIT_PRICE * SD.QUANTITY)
+FROM SALES S JOIN SALES_DETAIL SD ON (S.SALES_ID = SD.SALES_ID)
+WHERE S.SALES_DATE LIKE '2012-02%'
+GROUP BY S.SHOP_CODE, S.SALES_DATE;
+
+(3)STEP3：ローカルファイルシステムへコピーする
+※コマンドライン上で実行
+hadoop fs -lsr /user/hiveuser/export_sales
+mkdir sales_sample_export
+cd sales_sample_export
+hadoop fs -get /user/hiveuser/export_sales/000000_0 ./export_sales.tsv
+head ./export_sales.tsv
+wc -l export_sales.tsv
+
+
+●JDBCからHiveを使用する
+(1)コンパイルする
+cd ~
+mkdir -p jdbc_client/src/sample/hive/jdbc/
+cd ./jdbc_client/src/sample/hive/jdbc/
+vi HiveJdbcClient.java
+cd ~/jdbc_client
+mkdir classes
+javac -d classes ./src/sample/hive/jdbc/HiveJdbcClient.java
+ls -al classes/sample/hive/jdbc
+
+(2)クラスパスにjarファイルを指定する
+・CDH3
+cd ~/jdbc_client/
+CLASSPATH=./classes; for i in /usr/lib/hive/lib/*.jar ; do CLASSPATH=$CLASSPATH:$i ; done
+CLASSPATH=$CLASSPATH:/usr/lib/hadoop/hadoop-core.jar
+
+・CDH4
+cd ~/jdbc_client/
+CLASSPATH=./classes; for i in /usr/lib/hive/lib/*.jar ; do CLASSPATH=$CLASSPATH:$i ; done
+CLASSPATH=$CLASSPATH:/usr/lib/hadoop/hadoop-common.jar
+
+(3)hiveserverを起動する
+hive --service hiveserver &
+
+(4)クライアントアプリケーションを実行する
+java -classpath $CLASSPATH sample.hive.jdbc.HiveJdbcClient
+※hiveserverを停止する場合は、killコマンドを使用してください。
+
+----- ----- ----- ----- ----- 
+はじめての Hadoop
+~ 分散データ処理の基本から実践まで
+2012 年 12 月 25 日 初版 第 1 刷発行
+著 者 田澤 孝之 横井 浩 松井 一比良発行者 片岡 巌 
+発行所 株式会社技術評論社
+----- ----- ----- ----- ----- 
+
+
+
+

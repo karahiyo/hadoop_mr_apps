@@ -38,7 +38,7 @@ public class JoinSalesDataJob {
             // Configurationオブジェクトの生成
             Configuration conf = new Configuration();
             // 汎用オプションの解析
-            Sting[] otherArgs = new GeneicOptionsParser(conf, args)
+            String[] otherArgs = new GenericOptionsParser(conf, args)
                 .getRemainingArgs();
             if (otherArgs.length != 3) {
                 System.err.println("Usage: sample.mr.JoinSalesData <sales> <sales_detail> <out>");
@@ -46,6 +46,7 @@ public class JoinSalesDataJob {
             }
 
             // ジョブ起動用オプションの生成
+            Job job = new Job(conf, "JoinSalesDataJob");
             // 本クラスを含むjarファイルをジョブに登録
             // (これにより、スレーブノードのクラスパスにjarが組み込まれる)
             job.setJarByClass(JoinSalesDataJob.class);
@@ -86,7 +87,7 @@ public class JoinSalesDataJob {
             private Text outValue = new Text();
 
             @Override
-            protected void map(Longwritable key, Text value, Context context)
+            protected void map(LongWritable key, Text value, Context context)
                 throws IOException, InterruptedException {
 
                 // valueの取得
@@ -100,7 +101,7 @@ public class JoinSalesDataJob {
                 String[] columns = line.split(COLUMN_SEPARATOR);
                 String salesId = columns[0];
                 String shopCode = columns[1];
-                String salesData = column[2];
+                String salesData = columns[2];
                 // Mapperから出力するkeyを設定
                 outKey.set(salesId);
                 // Mapperから出力するValueを設定
@@ -128,7 +129,7 @@ public class JoinSalesDataJob {
 
                 // valueの取得
                 String line = value.toString();
-                if (line =- null || line.equals("")) {
+                if (line == null || line.equals("")) {
                     return;
                 }
 
@@ -137,7 +138,7 @@ public class JoinSalesDataJob {
                 String[] columns = line.split(COLUMN_SEPARATOR);
                 String salesId = columns[0];
                 String itemCode = columns[2];
-                int unitPrice = integer.parseInt(column[3]);
+                int unitPrice = Integer.parseInt(columns[3]);
                 int quantity = Integer.parseInt(columns[4]);
 
                 // Mapperから出力するKey/Valueを設定

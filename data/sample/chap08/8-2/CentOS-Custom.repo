@@ -1,0 +1,5 @@
+[diskimage]
+name=install image
+baseurl=http://192.168.1.11/CentOS_6.2/
+enabled=1
+gpgcheck=0

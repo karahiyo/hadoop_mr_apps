@@ -1,0 +1,122 @@
+----- ----- ----- ----- ----- 
+chap05-2_commands.txt
+----- ----- ----- ----- ----- 
+
+●データを読み込む
+(1)gruntシェルの起動
+cd ~/pig
+pig
+
+(2)データのロード
+pwd
+copyFromLocal sales_sample .
+ls
+cd sales_sample
+ls
+sales = LOAD '/user/piguser/sales_sample/sales.tsv' AS ( sales_id:int,shop_code:chararray, sales_date:chararray);
+sales_detail = LOAD '/user/piguser/sales_sample/sales_detail.tsv' AS (sales_id:int, detail_id:int, item_code:chararray, unit_price:int, quantity:int);
+shop_master = LOAD '/user/piguser/sales_sample/shoplist.tsv' AS ( shop_code:chararray, region:chararray);
+item_master = LOAD '/user/piguser/sales_sample/itemlist.tsv' AS ( item_code:chararray, item_name:chararray, unit_price:int);
+
+
+●ロードされたデータを確認する
+
+DUMP item_master;
+
+
+●データを検索する
+sales_2012feb = FILTER sales BY sales_date matches '2012-02-[0-9]*';
+DUMP sales_2012feb;
+
+●商品ごとの売上件数をカウントする
+(1)ILLUSTRATEの例
+item_group = GROUP sales_detail BY item_code;
+DESCRIBE item_group;
+item_count = FOREACH item_group GENERATE group, COUNT(sales_detail) AS count;
+DESCRIBE item_count;
+ILLUSTRATE item_count;
+
+(2)FOREACHのネストブロックの例
+item_group = GROUP sales_detail BY item_code;
+item_count = FOREACH item_group {
+filtered_items = FILTER sales_detail BY quantity >= 3;
+GENERATE group, COUNT(filtered_items) AS count;
+}
+DUMP item_count;
+
+
+
+●データを結合する
+(1)STEP1　特定店舗の売上データを抽出
+shop_sales = FILTER sales BY shop_code == 'shop00088' and sales_date matches '2012-02-[0-9]*';
+
+(2)STEP2　STEP1 で抽出したデータと売上明細データとの結合
+shop_sales_detail = JOIN shop_sales BY sales_id , sales_detail BY sales_id;
+DESCRIBE shop_sales_detail;
+
+(3)STEP3　STEP2 の結合結果から必要な field のみ取得
+selected_fields = FOREACH shop_sales_detail GENERATE shop_sales::shop_code  AS shop_code:chararray, sales_detail::unit_price * sales_detail::quantity AS sub_total:int;
+
+(4)STEP4　STEP3 の結果から、店舗コード field でグルーピング
+shop_group = GROUP selected_fields BY shop_code;
+
+(5)STEP5　STEP4 の結果の金額 field を合計
+result = FOREACH shop_group GENERATE group, SUM(selected_fields.sub_total);
+DUMP result;
+
+
+●データをエクスポートする
+(1)gruntシェル上での操作
+cd
+shop_sales = FILTER sales BY shop_code == 'shop00088' and sales_date matches '2012-02-[0-9]*';
+shop_sales_detail = JOIN shop_sales BY sales_id , sales_detail BY sales_id;
+orderd_sales = ORDER shop_sales_detail BY shop_sales::sales_date;
+STORE orderd_sales INTO 'pig_export';
+quit;
+
+(2)エクスポートされた結果の確認
+hadoop fs -ls pig_export
+hadoop fs -cat pig_export/part-r-00000 | head
+
+
+●ユーザー関数(UDF)を作成する
+(1)ソースコードをjarファイルにする
+cd ~/pig
+mkdir -p function/src/example/pig/udf/
+cd function/src/example/pig/udf/
+vi Replace_Sample.java
+cd ~/pig/function/
+
+(2)クラスパスの指定
+・CDH3
+CLASSPATH=/usr/lib/pig/pig-core.jar
+
+・CDH4
+CLASSPATH=/usr/lib/pig/pig-withouthadoop.jar:/usr/lib/hadoop/hadoop-common.jar
+
+(3)コンパイル
+cd ~/pig/function/
+mkdir classes
+javac -cp $CLASSPATH -d classes ./src/example/pig/udf/Replace_Sample.java
+cd classes/
+jar cvf ../pig-udf.jar .
+
+(4)UDFを呼び出す
+#カレントディレクトリの移動
+cd ~/pig
+#gruntシェルの起動
+pig
+
+REGISTER 'function/pig-udf.jar';
+shop_master = LOAD 'sales_sample/shoplist.tsv' AS ( shop_code:chararray, region:chararray);
+replaced_shopcode = FOREACH shop_master GENERATE shop_code, example.pig.udf.Replace_Sample(shop_code,'shop','shopcode-');
+DUMP replaced_shopcode; 
+
+----- ----- ----- ----- ----- 
+はじめての Hadoop
+~ 分散データ処理の基本から実践まで
+2012 年 12 月 25 日 初版 第 1 刷発行
+著 者 田澤 孝之 横井 浩 松井 一比良発行者 片岡 巌 
+発行所 株式会社技術評論社
+----- ----- ----- ----- ----- 
+

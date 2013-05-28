@@ -13,7 +13,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Textl
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -26,7 +26,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
  * 1段目のMapReduceジョブの結果にたいして、
  * 店舗マスタの地域を結合する
  */
-public class joinRegionAndItemJob {
+public class JoinRegionAndItemJob {
 
     /** 絡むセパレータ文字列 */
     private static final String COLUMN_SEPARATOR = "\t";
@@ -47,7 +47,7 @@ public class joinRegionAndItemJob {
             // Configurationオブジェクトの生成
             Configuration conf = new Configuration();
             // 汎用オプションの解析
-            String[] otherArgs = new GenericOptionsPraser(conf, args)
+            String[] otherArgs = new GenericOptionsParser(conf, args)
                 .getRemainingArgs();
             if (otherArgs.length != 4) {
                 System.err.println("Usage: sample.mr.JoinRegionAndItemJob <job1_output> <out> <shoplist> <itemlist>");
@@ -55,10 +55,10 @@ public class joinRegionAndItemJob {
             }
 
             // ジョブ起動用オブジェクトの生成
-            Job job = new job(conf, "JoinRegionJob");
+            Job job = new Job(conf, "JoinRegionAndItemJob");
             //本クラスを含むJarファイルをジョブに登録
             //(これにより、スレーブノードのクラスパスにjarが組み込まれる)
-            job.setJarByClass(joinRegionAndItemJob.class);
+            job.setJarByClass(JoinRegionAndItemJob.class);
 
             // 最終結果のKey/Valueクラスを指定
             job.setOutputKeyClass(Text.class);
@@ -94,7 +94,7 @@ public class joinRegionAndItemJob {
             // 出力データ格納ディレクトリ
             FileOutputFormat.setOutputPath(job, new Path(args[1]));
             // ジョブの実行を開始
-            boolean result = job.waitForCmpletion(true);
+            boolean result = job.waitForCompletion(true);
             System.exit(result ? 0 : 2);
         } catch (Exception e) {
             e.printStackTrace();
@@ -106,11 +106,11 @@ public class joinRegionAndItemJob {
     /**
      * mapメソッドを実装したMapperクラス
      */
-    public static ckass JoinRegionAndItemJobMapper extends
+    public static class JoinRegionAndItemJobMapper extends
         Mapper<LongWritable, Text, Text, Text> {
 
             private Text outKey = new Text();
-            private TExt outValue = new Text();
+            private Text outValue = new Text();
 
             /** 店舗情報格納用HashMap */
             private Map<String, String> regionMap = new HashMap<String, String>();
@@ -150,11 +150,13 @@ public class joinRegionAndItemJob {
                 }
 
                 File itemCacheFile = new File(DIST_ITEM_CACHE_LINK);
+
+
                 try {
-                    reader = new BufferedReader(new fileReader(itemCacheFile));
+                    reader = new BufferedReader(new FileReader(itemCacheFile));
 
                     String line = null;
-                    while ((line = reader.readline()) != null) {
+                    while ((line = reader.readLine()) != null) {
                         if (line.equals("")) {
                             continue;
                         }
@@ -191,7 +193,7 @@ public class joinRegionAndItemJob {
                 int quantity = Integer.parseInt(columns[5]);
 
                 // shopCodeからregionを取得する
-                String region = regioMap.get(shopCode);
+                String region = regionMap.get(shopCode);
                 if(region == null) {
                     System.out.println(shopCode + " missing");
                 }
@@ -201,7 +203,7 @@ public class joinRegionAndItemJob {
                 outKey.set(itemCode + ELEMENT_SEPARATOR + itemName
                         + COLUMN_SEPARATOR + region + COLUMN_SEPARATOR + salesDate);
                 // Mapperから出力するValueを設定
-                outvalue.set(quantity + ELEMENT_SEPARATOR + (unitPrice * quantity));
+                outValue.set(quantity + ELEMENT_SEPARATOR + (unitPrice * quantity));
                 // 出力
                 context.write(outKey, outValue);
             }
@@ -212,7 +214,7 @@ public class joinRegionAndItemJob {
      * reduceメソッドを実装したReducerクラス。
      * ドライバクラス内に静的ネストクラスとして定義
      */
-    public static class joinRegionAnditemJobReducer extends
+    public static class JoinRegionAndItemJobReducer extends
         Reducer<Text, Text, Text, Text> {
 
             Text outKey = new Text();
@@ -234,13 +236,13 @@ public class joinRegionAndItemJob {
                     String[] valueColumns = ite.next().toString()
                         .split(ELEMENT_SEPARATOR);
                     int quantity = Integer.parseInt(valueColumns[0]);
-                    int price = Integer.parseInt(valueColumns1]);
+                    int price = Integer.parseInt(valueColumns[1]);
                     totalQuantity += quantity;
                     totalPrice += price;
                 }
 
                 // ReducerのKeyをセット
-                outkey.set(keyStr);
+                outKey.set(keyStr);
                 //Reducerのvalueとして、合計した個数と金額をセット
                 outValue.set(totalQuantity + COLUMN_SEPARATOR + totalPrice);
                 // 出力

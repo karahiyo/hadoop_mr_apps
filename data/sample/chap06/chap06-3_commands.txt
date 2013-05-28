@@ -1,0 +1,109 @@
+----- ----- ----- ----- ----- 
+chap06-3_commands.txt
+----- ----- ----- ----- ----- 
+
+●ソースコードのコンパイルから実行結果の確認まで
+(1)STEP1：コンパイル
+・クラスパス(CDH3)
+CLASSPATH=/usr/lib/hadoop/hadoop-core.jar
+
+・クラスパス(CDH4)
+CLASSPATH=/usr/lib/hadoop/hadoop-common.jar:/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar
+
+・コンパイル
+cd ~/mapreduce/MRSample
+mkdir classes
+javac -classpath $CLASSPATH -d ./classes ./src/sample/mr/WordCount*.java
+
+
+(2)STEP2：jarファイルを作成する
+cd classes/
+jar cvf ../WordCountJob.jar sample
+
+
+(3)STEP3：MapReduceジョブを実行する
+cd ~/mapreduce/MRSample/
+hadoop fs -mkdir input_wordcount
+hadoop fs -put hamlet.txt input_wordcount
+hadoop fs -ls input_wordcount
+
+
+(4)STEP3-a：新API版WordCountを実行する
+hadoop jar WordCountJob.jar sample.mr.WordCountNew input_wordcount output_wordcount_new
+hadoop fs -ls output_wordcount_new
+
+
+(5)STEP3-b：旧API版WordCountを実行する
+hadoop jar WordCountJob.jar sample.mr.WordCountOld input_wordcount output_wordcount_old
+hadoop fs -ls output_wordcount_old
+
+(6)STEP4：実行結果を確認する
+hadoop fs -get /user/mruser/output_wordcount_new/part-r-00000 ./wordcount.output
+※本文には記載できていませんが、旧API版WordCountの実行結果を確認する場合は、以下のコマンドを実行してください。
+  hadoop fs -get /user/mruser/output_wordcount_old/part-00000 ./wordcount.output
+
+head -5 ./wordcount.output
+
+
+
+●MapReduceジョブで集計する
+(1)STEP1：コンパイルとjarファイルを作成する
+・クラスパス(CDH3)
+CLASSPATH=/usr/lib/hadoop/hadoop-core.jar:/usr/lib/hadoop/lib/commons-cli-1.2.jar
+
+・クラスパス(CDH4)
+CLASSPATH=/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar:/usr/lib/hadoop/hadoop-common.jar:/usr/lib/hadoop/lib/commons-cli-1.2.jar
+
+・コンパイル
+cd ~/mapreduce/MRSample2
+mkdir classes
+javac -classpath $CLASSPATH -d classes ./src/sample/mr/Join*New.java
+
+cd classes
+jar cvf ../CalcRegionAggregationNew.jar sample
+cd ~/mapreduce/MRSample2
+ls -al
+
+
+(2)STEP2：入力データをコピーする
+cd ~/mapreduce/MRSample2/sales_sample
+ls -al
+hadoop fs -mkdir input_sales
+hadoop fs -mkdir input_sales_detail
+hadoop fs -mkdir input_shoplist
+hadoop fs -mkdir input_itemlist
+hadoop fs -put sales.tsv input_sales/
+hadoop fs -put sales_detail.tsv input_sales_detail
+hadoop fs -put shoplist.tsv input_shoplist
+hadoop fs -put itemlist.tsv input_itemlist
+hadoop fs -lsr
+
+(3)STEP3：1つ目のジョブを実行する
+cd ~/mapreduce/MRSample2
+hadoop fs -rmr output_new_job1
+hadoop jar CalcRegionAggregationNew.jar sample.mr.JoinSalesDataJobNew input_sales input_sales_detail output_new_job1
+
+(4)STEP4：2つ目のジョブを実行する
+hadoop fs -rmr output_new_job2
+hadoop jar CalcRegionAggregationNew.jar sample.mr.JoinRegionAndItemJobNew output_new_job1 output_new_job2 input_shoplist/shoplist.tsv input_itemlist/itemlist.tsv
+
+(5)STEP5：実行結果を確認する
+hadoop fs -ls /user/mruser/output_new_job2/
+hadoop fs -cat /user/mruser/output_new_job2/part-r-00000 | head
+
+●MapReduceジョブのログを出力する
+(1)クラスパス
+・CDH3
+CLASSPATH=/usr/lib/hadoop/hadoop-core.jar:/usr/lib/hadoop/lib/commons-cli-1.2.jar:/usr/lib/hadoop/lib/commons-logging-1.0.4.jar
+
+・CDH4
+CLASSPATH=/usr/lib/hadoop-mapreduce/hadoop-mapreduce-client-core.jar:/usr/lib/hadoop/hadoop-common.jar:/usr/lib/hadoop/lib/commons-cli-1.2.jar:/usr/lib/hadoop/lib/commons-logging-1.1.1.jar
+
+----- ----- ----- ----- ----- 
+はじめての Hadoop
+~ 分散データ処理の基本から実践まで
+2012 年 12 月 25 日 初版 第 1 刷発行
+著 者 田澤 孝之 横井 浩 松井 一比良発行者 片岡 巌 
+発行所 株式会社技術評論社
+----- ----- ----- ----- ----- 
+

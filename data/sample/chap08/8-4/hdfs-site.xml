@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+ <property>
+  <name>dfs.permissions.superusergroup</name>
+  <value>hadoop</value>
+ </property>
+ <property>
+  <name>dfs.namenode.name.dir</name>
+  <value>/data/1/dfs/nn</value>
+ </property>
+ <property>
+  <name>dfs.datanode.data.dir</name>
+  <value>/data/1/dfs/dn</value>
+ </property>
+ <property>
+  <name>dfs.hosts</name>
+  <value>/etc/hadoop/conf/dfs-hosts</value>
+ </property>
+ <property>
+  <name>dfs.hosts.exclude</name>
+  <value>/etc/hadoop/conf/dfs-exhosts</value>
+ </property>
+ <property>
+   <name>dfs.nameservices</name>
+   <value>mycluster</value>
+ </property>
+ <property>
+   <name>dfs.ha.namenodes.mycluster</name>
+   <value>hadoop-master1,hadoop-master2</value>
+ </property>
+ <property>
+   <name>dfs.namenode.rpc-address.mycluster.hadoop-master1</name>
+   <value>hadoop-master1:8020</value>
+ </property>
+ <property>
+   <name>dfs.namenode.http-address.mycluster.hadoop-master1</name>
+   <value>hadoop-master1:50070</value>
+ </property>
+ <property>
+   <name>dfs.namenode.rpc-address.mycluster.hadoop-master2</name>
+   <value>hadoop-master2:8020</value>
+ </property>
+ <property>
+   <name>dfs.namenode.http-address.mycluster.hadoop-master2</name>
+   <value>hadoop-master2:50070</value>
+ </property>
+ <property>
+   <name>dfs.namenode.shared.edits.dir</name>
+   <value>file:///mnt/filer1/dfs/ha-name-dir-shared</value>
+ </property>
+ <property>
+   <name>dfs.client.failover.proxy.provider.mycluster</name>
+   <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+ </property>
+ <property>
+  <name>dfs.ha.fencing.methods</name>
+  <value>sshfence</value>
+ </property>
+ <property>
+  <name>dfs.ha.fencing.ssh.private-key-files</name>
+  <value>/var/lib/hadoop-hdfs/.ssh/id_dsa</value>
+ </property>
+
+</configuration>
+

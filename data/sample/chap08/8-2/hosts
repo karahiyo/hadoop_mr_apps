@@ -1,0 +1,12 @@
+# Do not remove the following line, or various programs
+# that require network functionality will fail.
+127.0.0.1		local.domain localhost
+::1		localhost6.localdomain6 localhost6
+
+192.168.1.5 	hadoop-client1
+192.168.1.11	hadoop-master1
+192.168.1.21	hadoop-slave1
+192.168.1.22	hadoop-slave2
+192.168.1.23	hadoop-slave3
+192.168.1.24	hadoop-slave4
+192.168.1.25	hadoop-slave5

@@ -1,0 +1,90 @@
+----- ----- ----- ----- ----- 
+Appendix1_commands.txt
+----- ----- ----- ----- ----- 
+
+●MySQLのDB定義
+(1)データベースの作成
+mysql -u mysql -p
+CREATE DATABASE sqoop_sample;
+
+(2)テーブルの作成
+mysql -u mysql -p
+use sqoop_sample
+
+-- SALES
+CREATE TABLE SALES(
+SALES_ID INT NOT NULL COMMENT '注文番号',
+SHOP_CODE VARCHAR(32) NOT NULL COMMENT '店舗コード',
+SALES_DATE DATE NOT NULL COMMENT '売上日',
+REGISTER_DATE DATETIME NOT NULL COMMENT '登録日',
+PRIMARY KEY (SALES_ID)
+) ENGINE = InnoDB COMMENT = '売上テーブル' DEFAULT CHARACTER SET utf8;
+
+-- SALES_DETAIL
+CREATE TABLE SALES_DETAIL(
+SALES_ID INT NOT NULL COMMENT '注文番号',
+DETAIL_ID INT NOT NULL COMMENT '明細番号',
+ITEM_CODE VARCHAR(32) NOT NULL COMMENT '商品コード',
+UNIT_PRICE INT NOT NULL COMMENT '単価',
+QUANTITY INT NOT NULL COMMENT '個数',
+REGISTER_DATE DATETIME NOT NULL COMMENT '登録日',
+PRIMARY KEY (SALES_ID, DETAIL_ID)
+) ENGINE = InnoDB COMMENT = '売上明細テーブル' DEFAULT CHARACTER SET utf8;
+
+(3)データのロード
+mysql -u mysql -p
+use sqoop_sample
+LOAD DATA INFILE '/tmp/daily-sales.tsv' INTO TABLE SALES;
+LOAD DATA INFILE '/tmp/daily-sales_detail.tsv' INTO TABLE SALES_DETAIL;
+
+
+●MySQLとの接続を確認する
+sqoop list-databases --connect jdbc:mysql://localhost/ --username mysql --password password
+
+
+●MySQLからのimport
+sqoop import --connect jdbc:mysql://localhost/sqoop_sample --username mysql --password password --fields-terminated-by "\t" --table SALES --columns "SALES_ID,SHOP_CODE,SALES_DATE" --where "REGISTER_DATE >= '2012-04-01 00:00:00' AND REGISTER_DATE < '2012-04-02 00:00:00'"  --target-dir /user/mruser/input_sqoop_sales
+sqoop import --connect jdbc:mysql://localhost/sqoop_sample --username mysql --password password --fields-terminated-by "\t" --table SALES_DETAIL --columns "SALES_ID,DETAIL_ID,ITEM_CODE,UNIT_PRICE,QUANTITY" --where "REGISTER_DATE >= '2012-04-01 00:00:00' AND REGISTER_DATE < '2012-04-02 00:00:00'"  --target-dir /user/mruser/input_sqoop_sales_detail
+hadoop fs -ls input_sqoop*
+
+●MySQLへのexport
+(1)RESULTテーブルの作成
+mysql -u mysql -p
+use sqoop_sample
+
+-- RESULT
+CREATE TABLE RESULT(
+ITEM_INFO VARCHAR(133) NOT NULL COMMENT '商品コード:商品名',
+REGION VARCHAR(200) NOT NULL COMMENT '地域',
+SALES_DATE DATE NOT NULL COMMENT '売上日',
+QUANTITY INT NOT NULL COMMENT '個数',
+PRICE INT NOT NULL COMMENT '金額',
+PRIMARY KEY (ITEM_INFO, SALES_DATE, REGION)
+) ENGINE = InnoDB COMMENT = '集計結果テーブル' DEFAULT CHARACTER SET utf8;
+
+(2)export
+cd ~/mapreduce/MRSample2
+hadoop jar CalcRegionAggregationNew.jar sample.mr.JoinSalesDataJobNew input_sqoop_sales input_sqoop_sales_detail output_new_job1
+hadoop jar CalcRegionAggregationNew.jar sample.mr.JoinRegionAndItemJobNew output_new_job1 output_new_job2 input_shoplist/shoplist.tsv input_itemlist/itemlist.tsv
+sqoop export --connect jdbc:mysql://localhost/sqoop_sample --username mysql --password password  --table RESULT --export-dir /user/mruser/output_new_job2 --input-fields-terminated-by "\t"
+
+●プライマリキーがないテーブルのimport
+(1)MySQLの操作
+mysql -u mysql -p
+use sqoop_sample
+ALTER TABLE SALES DROP PRIMARY KEY;
+
+(2)import
+※エラーになります
+sqoop import --connect jdbc:mysql://localhost/sqoop_sample --username mysql --password password --fields-terminated-by "\t" --table SALES --columns "SALES_ID,SHOP_CODE,SALES_DATE" --where "REGISTER_DATE >= '2012-04-01 00:00:00' AND REGISTER_DATE < '2012-04-02 00:00:00'"  --target-dir /user/mruser/input_sqoop_sales
+
+sqoop import --connect jdbc:mysql://localhost/sqoop_sample --username mysql --password password --fields-terminated-by "\t" --table SALES --columns "SALES_ID,SHOP_CODE,SALES_DATE" --where "REGISTER_DATE >= '2012-04-01 00:00:00' AND REGISTER_DATE < '2012-04-02 00:00:00'"  --target-dir /user/mruser/input_sqoop_sales --split-by SALES_ID
+
+hadoop fs -ls /user/mruser/input_sqoop_sales
+
+----- ----- ----- ----- ----- 
+はじめての Hadoop~ 分散データ処理の基本から実践まで
+2012 年 12 月 25 日 初版 第 1 刷発行
+著 者 田澤 孝之 横井 浩 松井 一比良発行者 片岡 巌 
+発行所 株式会社技術評論社
+----- ----- ----- ----- ----- 
