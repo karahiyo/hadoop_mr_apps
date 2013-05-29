@@ -15,7 +15,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 /**
- *  ワードカウントMapReduceジョブ 
+ *  ワードカウントMapReduceジョブ
  *  using org.apache.hadoop.mapreduce new API.
  */
 
@@ -61,7 +61,7 @@ public class WordCount {
 
             private Text outKey = new Text();
             private IntWritable outValue = new IntWritable(1);
-            
+
             @Override
             protected void map(LongWritable key, Text value, Context context)
             throws IOException, InterruptedException {
